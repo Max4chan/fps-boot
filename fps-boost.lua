@@ -1,12 +1,6 @@
-# fps-boot
-Um script para a plataforma roblox. Ele irá deixar os jogos mais leve, para players que tem celular/pc fraco.
-
---[[ 
-    Script de Otimização de FPS para Roblox
-    - FPS Unlocker até 666 FPS (detecta função disponível)
-    - Remove skybox, partículas e efeitos visuais supérfluos
-    - Adiciona contador de FPS pequeno e móvel no canto inferior esquerdo
-    - Seguro: não remove GUI, mapas ou partes essenciais do jogo
+--[[
+FPS Boost Script Roblox
+Atualizado para máxima compatibilidade e desempenho.
 --]]
 
 -- FPS Unlocker universal
@@ -20,41 +14,56 @@ pcall(function()
     end
 end)
 
--- Remove skybox de Lighting
+-- Remove Skybox
 pcall(function()
-    local Lighting = game:GetService("Lighting")
-    for _, v in ipairs(Lighting:GetChildren()) do
+    local lighting = game:GetService("Lighting")
+    for _, v in ipairs(lighting:GetChildren()) do
         if v:IsA("Sky") then
             v:Destroy()
         end
     end
 end)
 
--- Remove efeitos visuais do Lighting
+-- Remove efeitos visuais do Lighting e ajusta configurações para mais leveza
 pcall(function()
-    local Lighting = game:GetService("Lighting")
-    for _, v in ipairs(Lighting:GetChildren()) do
+    local lighting = game:GetService("Lighting")
+    lighting.GlobalShadows = false
+    lighting.Brightness = 1
+    lighting.ExposureCompensation = 0
+    for _, v in ipairs(lighting:GetChildren()) do
         if v:IsA("PostEffect") or v:IsA("BloomEffect") or v:IsA("ColorCorrectionEffect") or v:IsA("SunRaysEffect") or v:IsA("BlurEffect") then
             v.Enabled = false
         end
     end
 end)
 
--- Remove partículas desnecessárias do workspace
+-- Remove partículas, trilhas, fogo, fumaça, folhas e grama do Terrain
 pcall(function()
     for _, obj in ipairs(workspace:GetDescendants()) do
         if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Smoke") or obj:IsA("Fire") then
             obj.Enabled = false
+        elseif obj:IsA("Explosion") then
+            obj:Destroy()
         end
+    end
+    -- Remove folhas e grama do Terrain
+    if workspace:FindFirstChildOfClass("Terrain") then
+        local terrain = workspace:FindFirstChildOfClass("Terrain")
+        pcall(function() terrain.Decorations = false end)
+        pcall(function() terrain.WaterWaveSize = 0 end)
+        pcall(function() terrain.WaterWaveSpeed = 0 end)
+        pcall(function() terrain.WaterReflectance = 0 end)
+        pcall(function() terrain.WaterTransparency = 1 end)
     end
 end)
 
--- Otimiza materiais e texturas (não remove partes importantes)
+-- Otimiza materiais, desativa reflexos, remove texturas e decals
 pcall(function()
     for _, v in ipairs(workspace:GetDescendants()) do
         if v:IsA("BasePart") then
             v.Material = Enum.Material.Plastic
             v.Reflectance = 0
+            v.CastShadow = false
         elseif v:IsA("Decal") or v:IsA("Texture") then
             v.Transparency = 1
         elseif v:IsA("MeshPart") then
@@ -63,52 +72,58 @@ pcall(function()
     end
 end)
 
--- FPS Counter pequeno, móvel e estilizado
-local player = game:GetService("Players").LocalPlayer
-local gui = Instance.new("ScreenGui")
-gui.Name = "FPSCounterGui"
-gui.ResetOnSpawn = false
-gui.Parent = player:WaitForChild("PlayerGui")
-
-local fpsCounter = Instance.new("TextButton")
-fpsCounter.Name = "FPSCounter"
-fpsCounter.Size = UDim2.new(0, 70, 0, 24)
-fpsCounter.Position = UDim2.new(0, 8, 1, -32) -- canto inferior esquerdo
-fpsCounter.AnchorPoint = Vector2.new(0, 1)
-fpsCounter.BackgroundTransparency = 0.3
-fpsCounter.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-fpsCounter.TextColor3 = Color3.fromRGB(0, 255, 0)
-fpsCounter.TextStrokeTransparency = 0.5
-fpsCounter.TextSize = 15
-fpsCounter.Font = Enum.Font.SourceSansBold
-fpsCounter.Text = "FPS: 0"
-fpsCounter.AutoButtonColor = false
-fpsCounter.Parent = gui
-fpsCounter.Active = true
-fpsCounter.Draggable = true -- permite arrastar
-
--- Atualização do FPS
-local RunService = game:GetService("RunService")
-local lastUpdate = tick()
-local frames = 0
-local fps = 0
-
-RunService.RenderStepped:Connect(function()
-    frames = frames + 1
-    if tick() - lastUpdate >= 1 then
-        fps = frames
-        frames = 0
-        lastUpdate = tick()
-        fpsCounter.Text = "FPS: " .. tostring(fps)
+-- Remove sons desnecessários (mantém só sons de personagem e música ambiente)
+pcall(function()
+    for _, v in ipairs(workspace:GetDescendants()) do
+        if v:IsA("Sound") and not v.Name:lower():find("music") and not v.Parent:IsA("Player") then
+            v:Stop()
+            v.Volume = 0
+        end
     end
 end)
 
--- Deixa o contador menos intrusivo ao passar o mouse
-fpsCounter.MouseEnter:Connect(function()
-    fpsCounter.BackgroundColor3 = Color3.fromRGB(0, 70, 0)
-end)
-fpsCounter.MouseLeave:Connect(function()
-    fpsCounter.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+-- Remove efeitos de partículas de StarterGui e outros serviços comuns
+local services = {"StarterGui", "StarterPack", "ReplicatedStorage"}
+for _, service in ipairs(services) do
+    pcall(function()
+        local s = game:GetService(service)
+        for _, v in ipairs(s:GetDescendants()) do
+            if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") or v:IsA("Fire") then
+                v.Enabled = false
+            end
+        end
+    end)
+end
+
+-- FPS Counter pequeno,: 0"
+        fpsCounter.AutoButtonColor = false
+        fpsCounter.Parent = gui
+        fpsCounter.Active = true
+        fpsCounter.Draggable = true
+
+        -- Atualização do FPS
+        local RunService = game:GetService("RunService")
+        local lastUpdate = tick()
+        local frames = 0
+        local fps = 0
+
+        RunService.RenderStepped:Connect(function()
+            frames = frames + 1
+            if tick() - lastUpdate >= 1 then
+                fps = frames
+                frames = 0
+                lastUpdate = tick()
+                fpsCounter.Text = "FPS: " .. tostring(fps)
+            end
+        end)
+
+        fpsCounter.MouseEnter:Connect(function()
+            fpsCounter.BackgroundColor3 = Color3.fromRGB(0,70,0)
+        end)
+        fpsCounter.MouseLeave:Connect(function()
+            fpsCounter.BackgroundColor3 = Color3.fromRGB(20,20,20)
+        end)
+    end
 end)
 
-print("Otimização de FPS aplicada! Skybox, partículas e efeitos visuais foram removidos. Unlocker setado para 666 FPS.")
+print("Otimização de FPS aplicada! Skybox, partículas, efeitos visuais, sons, folhas e grama foram removidos ou desativados. Unlocker setado para 666 FPS.")
